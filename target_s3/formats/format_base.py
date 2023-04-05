@@ -1,4 +1,6 @@
 import re
+
+import boto3
 import inflection
 import json
 import collections
@@ -42,10 +44,15 @@ class FormatBase(metaclass=ABCMeta):
         self.stream_name_path_override = config.get("stream_name_path_override", None)
 
         self.bucket = config.get("bucket")  # required
-        self.session = Session(
-            region_name=config.get("aws_region"),
-            profile_name=config.get("aws_profile_name", None),
-        )
+        self.endpoint_url = config.get("endpoint_url", None)
+        self.region_name = config.get("aws_region")
+        self.aws_access_key = config.get("aws_access_key")
+        self.aws_secret_access_key = config.get("aws_secret_access_key")
+
+        # self.session = Session(
+        #     region_name=config.get("aws_region"),
+        #     profile_name=config.get("aws_profile_name", None),
+        # )
         self.prefix = config.get("prefix", None)
         self.logger = context["logger"]
         self.fully_qualified_key = self.create_key()
@@ -56,12 +63,14 @@ class FormatBase(metaclass=ABCMeta):
         """Execute the write to S3. (default)"""
         # TODO: create dynamic cloud
         # TODO: is there a better way to handle write contents ?
-        with open(
-            f"s3://{self.fully_qualified_key}.{self.extension}.{self.compression}",
-            "w",
-            transport_params={"client": self.session.client("s3")},
-        ) as f:
-            f.write(contents)
+        if self.endpoint_url:
+            s3_client = boto3.client("s3", endpoint_url=self.endpoint_url)
+        else:
+            s3_client = boto3.client("s3")
+
+        s3_client.upload_fileobj(contents.encode(),
+                                 self.bucket,
+                                 f"{self.fully_qualified_key}.{self.extension}.{self.compression}")
 
     @abstractmethod
     def run(self, records) -> None:
@@ -90,7 +99,7 @@ class FormatBase(metaclass=ABCMeta):
             if self.stream_name_path_override is None
             else self.stream_name_path_override
         )
-        folder_path = f"{self.bucket}/{self.prefix}/{stream_name}/"
+        folder_path = f"{self.prefix}/{stream_name}/"
         file_name = ""
         if self.config["append_date_to_prefix"]:
             grain = DATE_GRAIN[self.config["append_date_to_prefix_grain"].lower()]

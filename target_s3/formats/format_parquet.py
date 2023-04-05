@@ -15,12 +15,14 @@ class FormatParquet(FormatBase):
     ) -> None:
         """Creates a pyarrow FileSystem object for accessing S3."""
         try:
-            self.file_system = fs.S3FileSystem(
-                access_key=self.session.get_credentials().access_key,
-                secret_key=self.session.get_credentials().secret_key,
-                session_token=self.session.get_credentials().token,
-                region=self.session.region_name,
-            )
+            # We are using pyarrow.fs here not s3fs. Signatures differ
+            client_kwargs={
+                    "endpoint_override": self.endpoint_url,
+                    "access_key": self.aws_access_key,
+                    "secret_key": self.aws_secret_access_key,
+                }
+
+            self.file_system = fs.S3FileSystem(**client_kwargs)
         except Exception as e:
             self.logger.error("Failed to create parquet file system.")
             self.logger.error(e)
@@ -60,7 +62,7 @@ class FormatParquet(FormatBase):
         df = self.create_dataframe()
         try:
             ParquetWriter(
-                f"{self.fully_qualified_key}.{self.extension}",
+                f"{self.bucket}/{self.fully_qualified_key}.{self.extension}",
                 df.schema,
                 compression="gzip",  # TODO: support multiple compression types
                 filesystem=self.file_system,

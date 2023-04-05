@@ -49,7 +49,16 @@ class Targets3(Target):
             description="The aws bucket to target.",
             required=True,
         ),
-        th.Property("prefix", th.StringType, description="The prefix for the key."),
+        th.Property(
+            "endpoint_url",
+            th.StringType,
+            description="The endpoint_url of the s3 bucket or object store.",
+            required=False,
+        ),
+        th.Property("prefix",
+            th.StringType,
+            description="The prefix for the key."
+        ),
         th.Property(
             "stream_name_path_override",
             th.StringType,
@@ -102,7 +111,7 @@ class Targets3(Target):
         th.Property(
             "set_dtype_string",
             th.BooleanType,
-            description="A flag indictating to set dytpe to string.",
+            description="A flag indicating to set dytpe to string.",
         ),
         th.Property("stream_maps", th.ObjectType()),
     ).to_dict()
