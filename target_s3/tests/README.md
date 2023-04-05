@@ -33,6 +33,12 @@ services:
 
 ```
 
+Execute `docker-compose`
+
+```shell
+$ docker-compose -f docker-compose.yml.yml -p localstack up -d --force-recreate
+```
+
 Create a `test.config.json` file in the `tests/` folder as follows:
 ```json
 {
