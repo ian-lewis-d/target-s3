@@ -49,10 +49,6 @@ class FormatBase(metaclass=ABCMeta):
         self.aws_access_key = config.get("aws_access_key")
         self.aws_secret_access_key = config.get("aws_secret_access_key")
 
-        # self.session = Session(
-        #     region_name=config.get("aws_region"),
-        #     profile_name=config.get("aws_profile_name", None),
-        # )
         self.prefix = config.get("prefix", None)
         self.logger = context["logger"]
         self.fully_qualified_key = self.create_key()
