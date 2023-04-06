@@ -1,6 +1,10 @@
 import pyarrow
-from pyarrow import fs
+
 from pyarrow.parquet import ParquetWriter
+
+from aiobotocore.session import AioSession
+
+import s3fs
 
 from target_s3.formats.format_base import FormatBase
 
@@ -13,16 +17,26 @@ class FormatParquet(FormatBase):
     def create_filesystem(
         self,
     ) -> None:
-        """Creates a pyarrow FileSystem object for accessing S3."""
         try:
-            # We are using pyarrow.fs here not s3fs. Signatures differ
-            client_kwargs={
-                    "endpoint_override": self.endpoint_url,
-                    "access_key": self.aws_access_key,
-                    "secret_key": self.aws_secret_access_key,
-                }
+            """Creates a s3fs FileSystem object for accessing S3."""
+            # TODO: Consider using s3_client.upload_fileobj over S3FileSystem
+            # We already defined session in FormatBase
+            if self.aws_access_key and self.aws_secret_access_key:
+                client_kwargs=dict(endpoint_url=self.endpoint_url)
 
-            self.file_system = fs.S3FileSystem(**client_kwargs)
+                self.file_system = s3fs.S3FileSystem(
+                    key=self.aws_access_key,
+                    secret=self.aws_secret_access_key,
+                    token=self.aws_session_token,
+                    client_kwargs=client_kwargs
+                )
+            elif self.aws_profile:
+                session = AioSession(profile=self.aws_profile)
+                self.file_system = s3fs.S3FileSystem(session=session)
+            else:
+                session = AioSession()
+                self.file_system = s3fs.S3FileSystem(session=session)
+
         except Exception as e:
             self.logger.error("Failed to create parquet file system.")
             self.logger.error(e)
@@ -64,7 +78,7 @@ class FormatParquet(FormatBase):
             ParquetWriter(
                 f"{self.bucket}/{self.fully_qualified_key}.{self.extension}",
                 df.schema,
-                compression="gzip",  # TODO: support multiple compression types
+                compression="gzip",  # TODO: support multiple compression types, inc snappy
                 filesystem=self.file_system,
             ).write_table(df)
         except Exception as e:

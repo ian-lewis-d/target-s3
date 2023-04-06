@@ -22,7 +22,7 @@ class Targets3(Target):
             "aws_access_key",
             th.StringType,
             secret=True,
-            description="The aws secret access key for auth to S3.",
+            description="The aws secret access key id for auth to S3.",
         ),
         th.Property(
             "aws_secret_access_key",
@@ -30,6 +30,19 @@ class Targets3(Target):
             secret=True,
             required=False,
             description="The aws secret access key for auth to S3.",
+        ),
+        th.Property(
+            "aws_session_token",
+            th.StringType,
+            secret=True,
+            required=False,
+            description="The aws session token used for auth to S3.",
+        ),
+        th.Property(
+            "aws_profile",
+            th.StringType,
+            required=False,
+            description="The profile name to use for aws credentials.",
         ),
         th.Property(
             "aws_region",
@@ -57,7 +70,8 @@ class Targets3(Target):
         ),
         th.Property("prefix",
             th.StringType,
-            description="The prefix for the key."
+            description="The prefix for the key.",
+            required=True,
         ),
         th.Property(
             "stream_name_path_override",

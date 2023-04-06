@@ -48,25 +48,40 @@ class FormatBase(metaclass=ABCMeta):
         self.region_name = config.get("aws_region")
         self.aws_access_key = config.get("aws_access_key")
         self.aws_secret_access_key = config.get("aws_secret_access_key")
+        self.aws_session_token = config.get("aws_session_token")
+        self.aws_profile = config.get("aws_profile")
 
         self.prefix = config.get("prefix", None)
         self.logger = context["logger"]
         self.fully_qualified_key = self.create_key()
         self.logger.info(f"key: {self.fully_qualified_key}")
 
+        # Create the session and s3_client
+        if self.aws_access_key and self.aws_secret_access_key:
+            self.aws_session = boto3.session.Session(
+                aws_access_key_id=self.aws_access_key,
+                aws_secret_access_key=self.aws_secret_access_key,
+                aws_session_token=self.aws_session_token
+            )
+        else:
+            self.aws_session = boto3.session.Session(profile_name=self.aws_profile)
+
+        # Here we create the s3_client used to access the resources
+        if self.endpoint_url:
+            self.s3_client = boto3.client("s3", endpoint_url=self.endpoint_url)
+        else:
+            self.s3_client = boto3.client("s3")
+
     @abstractmethod
     def _write(self, contents: str = None) -> None:
         """Execute the write to S3. (default)"""
         # TODO: create dynamic cloud
         # TODO: is there a better way to handle write contents ?
-        if self.endpoint_url:
-            s3_client = boto3.client("s3", endpoint_url=self.endpoint_url)
-        else:
-            s3_client = boto3.client("s3")
-
-        s3_client.upload_fileobj(contents.encode(),
-                                 self.bucket,
-                                 f"{self.fully_qualified_key}.{self.extension}.{self.compression}")
+        # Use s3_client.upload_fileobj to send the data as a bytestring
+        self.s3_client.upload_fileobj(contents.encode(),
+                                      self.bucket,
+                                      f"{self.fully_qualified_key}.{self.extension}.{self.compression}"
+                                      )
 
     @abstractmethod
     def run(self, records) -> None:
