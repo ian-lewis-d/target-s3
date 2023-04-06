@@ -11,7 +11,6 @@ from abc import ABCMeta, abstractmethod
 from boto3 import Session
 from smart_open import open
 
-
 LOGGER = logging.getLogger("target-s3")
 DATE_GRAIN = {
     "year": 7,
@@ -31,7 +30,6 @@ def format_type_factory(object_type_class, *pargs, **kargs):
 
 
 class FormatBase(metaclass=ABCMeta):
-
     """This is the object type base class"""
 
     def __init__(self, config: dict, context: dict, extension: str) -> None:
@@ -61,7 +59,7 @@ class FormatBase(metaclass=ABCMeta):
             self.aws_session = boto3.session.Session(
                 aws_access_key_id=self.aws_access_key,
                 aws_secret_access_key=self.aws_secret_access_key,
-                aws_session_token=self.aws_session_token
+                aws_session_token=self.aws_session_token,
             )
         else:
             self.aws_session = boto3.session.Session(profile_name=self.aws_profile)
@@ -78,10 +76,11 @@ class FormatBase(metaclass=ABCMeta):
         # TODO: create dynamic cloud
         # TODO: is there a better way to handle write contents ?
         # Use s3_client.upload_fileobj to send the data as a bytestring
-        self.s3_client.upload_fileobj(contents.encode(),
-                                      self.bucket,
-                                      f"{self.fully_qualified_key}.{self.extension}.{self.compression}"
-                                      )
+        self.s3_client.upload_fileobj(
+            contents.encode(),
+            self.bucket,
+            f"{self.fully_qualified_key}.{self.extension}.{self.compression}",
+        )
 
     @abstractmethod
     def run(self, records) -> None:

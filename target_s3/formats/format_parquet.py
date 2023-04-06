@@ -22,13 +22,13 @@ class FormatParquet(FormatBase):
             # TODO: Consider using s3_client.upload_fileobj over S3FileSystem
             # We already defined session in FormatBase
             if self.aws_access_key and self.aws_secret_access_key:
-                client_kwargs=dict(endpoint_url=self.endpoint_url)
+                client_kwargs = dict(endpoint_url=self.endpoint_url)
 
                 self.file_system = s3fs.S3FileSystem(
                     key=self.aws_access_key,
                     secret=self.aws_secret_access_key,
                     token=self.aws_session_token,
-                    client_kwargs=client_kwargs
+                    client_kwargs=client_kwargs,
                 )
             elif self.aws_profile:
                 session = AioSession(profile=self.aws_profile)

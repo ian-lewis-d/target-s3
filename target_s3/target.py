@@ -68,7 +68,8 @@ class Targets3(Target):
             description="The endpoint_url of the s3 bucket or object store.",
             required=False,
         ),
-        th.Property("prefix",
+        th.Property(
+            "prefix",
             th.StringType,
             description="The prefix for the key.",
             required=True,
